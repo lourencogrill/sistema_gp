@@ -1,10 +1,4 @@
 {
-  "build": {
-    "env": {
-      "DATABASE_URL": "@database_url"
-    },
-    "command": "prisma migrate deploy && next build"
-  },
   "framework": "nextjs",
   "regions": ["gru1", "iad1"],
   "functions": {
