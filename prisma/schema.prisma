@@ -30,6 +30,85 @@ enum CollaboratorStatus {
   INACTIVE
 }
 
+/// Tipos de carreira disponíveis na organização.
+enum CareerType {
+  APOIO          // Carreira de apoio
+  CONSULTORIA    // Carreira de consultoria
+  TECNICA        // Carreira técnica
+  GERENCIAL      // Carreira gerencial
+}
+
+/// Níveis de instrução/escolaridade.
+enum EducationLevel {
+  ENSINO_FUNDAMENTAL_COMPLETO     // 1
+  CURSANDO_ENSINO_MEDIO          // 2
+  ENSINO_MEDIO_COMPLETO          // 3
+  CURSANDO_ENSINO_TECNICO        // 4
+  ENSINO_TECNICO_COMPLETO        // 5
+  CURSANDO_ENSINO_SUPERIOR       // 6
+  ENSINO_SUPERIOR_COMPLETO       // 7
+  CURSANDO_POS_GRADUACAO         // 8
+  POS_GRADUACAO_COMPLETA         // 9
+}
+
+/// Tipos de requisitos para cargo.
+enum RequirementType {
+  PRE_REQUISITO   // Obrigatório
+  DESEJAVEL       // Desejável
+  POS_REQUISITO   // Pode adquirir depois
+}
+
+/// Níveis de conhecimento/habilidade.
+enum KnowledgeLevel {
+  NOCAO           // Apenas teórico
+  BASICO          // Pouca vivência prática
+  INTERMEDIARIO   // Vivência prática
+  AVANCADO        // Autoridade no assunto
+}
+
+/// Tipos de experiência necessária.
+enum ExperienceType {
+  CARGO          // Experiência no cargo específico
+  AREA           // Experiência na área
+}
+
+/// Periodicidade das atividades.
+enum ActivityFrequency {
+  DIARIAMENTE
+  SEMANALMENTE
+  QUINZENALMENTE
+  MENSALMENTE
+  BIMENSAL
+  TRIMESTRAL
+  SEMESTRALMENTE
+  ANUALMENTE
+  SEMPRE_QUE_NECESSARIO
+}
+
+/// Categorias de habilidades comportamentais.
+enum BehavioralCategory {
+  CULTURA_ORGANIZACIONAL    // Habilidades da cultura organizacional
+  ESPECIFICAS_CARGO        // Habilidades específicas do cargo
+  POSTURA_COMPORTAMENTO    // Postura e comportamento geral
+}
+
+/// Status da avaliação de desempenho.
+enum EvaluationStatus {
+  DRAFT        // Rascunho
+  IN_PROGRESS  // Em andamento
+  SUBMITTED    // Enviada
+  COMPLETED    // Finalizada
+  CANCELLED    // Cancelada
+}
+
+/// Papéis de usuário no sistema
+enum Role {
+  ADMIN       // Administrador do sistema
+  HR_MANAGER  // Gerente de RH com acesso a configurações
+  MANAGER     // Gestor de equipe, pode avaliar seus liderados
+  EMPLOYEE    // Colaborador, pode realizar auto-avaliação
+}
+
 /// Representa um usuário do sistema, geralmente gerenciado pelo NextAuth.
 model User {
   id            String    @id @default(cuid())
@@ -37,8 +116,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  /// Papel do usuário no sistema (ex: ADMIN, USER).
-  role          String?
+  /// Papel do usuário no sistema.
+  role          Role      @default(EMPLOYEE)
 
   accounts      Account[]
   sessions      Session[]
@@ -86,6 +165,58 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+/// Representa uma empresa cliente na plataforma.
+model Company {
+  id        String   @id @default(cuid())
+  /// Nome da empresa.
+  name      String   @unique
+  /// CNPJ da empresa (opcional e único).
+  cnpj      String?  @unique
+  /// Data de criação do registro.
+  createdAt DateTime @default(now())
+  /// Data da última atualização.
+  updatedAt DateTime @updatedAt
+
+  /// Colaboradores que pertencem a esta empresa.
+  collaborators Collaborator[]
+  /// Quadros Kanban que pertencem a esta empresa.
+  kanbanBoards  KanbanBoard[]
+  /// Cargos definidos na empresa.
+  jobPositions  JobPosition[]
+  /// Avaliações de desempenho da empresa.
+  performanceEvaluations PerformanceEvaluation[]
+  /// Configurações de avaliação da empresa.
+  evaluationSettings EvaluationSettings[]
+}
+
+/// Configurações do sistema de avaliação por empresa.
+model EvaluationSettings {
+  id        String   @id @default(cuid())
+  /// Empresa à qual pertence a configuração.
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  /// Peso das atividades principais (padrão: 0.7 = 70%).
+  primaryActivityWeight Float @default(0.7)
+  /// Peso das demais atividades (padrão: 0.3 = 30%).
+  secondaryActivityWeight Float @default(0.3)
+  /// Peso das habilidades da cultura organizacional (padrão: 0.5 = 50%).
+  organizationalSkillsWeight Float @default(0.5)
+  /// Peso das habilidades específicas do cargo (padrão: 0.5 = 50%).
+  jobSpecificSkillsWeight Float @default(0.5)
+  /// Percentual base para instrução mínima (padrão: 0.8 = 80%).
+  minimumEducationBaseScore Float @default(0.8)
+  /// Percentual base para experiência mínima (padrão: 0.8 = 80%).
+  minimumExperienceBaseScore Float @default(0.8)
+  /// Percentual de atingimento de meta equivalente aos 80% para crescimento.
+  targetAchievementForGrowth Float @default(0.8)
+  /// Data de criação do registro.
+  createdAt DateTime @default(now())
+  /// Data da última atualização.
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId])
+}
+
 /// Representa um funcionário dentro de uma empresa na plataforma.
 model Collaborator {
   id        String   @id @default(cuid())
@@ -94,16 +225,28 @@ model Collaborator {
   user      User     @relation(fields: [userId], references: [id])
   /// A qual empresa este colaborador pertence.
   companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
   /// Nome completo do colaborador.
   name      String
   /// E-mail profissional do colaborador.
   email     String   @unique
-  /// Cargo ou função do colaborador.
-  role      String
+  /// Cargo atual do colaborador.
+  jobPositionId String?
+  jobPosition   JobPosition? @relation(fields: [jobPositionId], references: [id])
   /// Departamento ou setor do colaborador.
   department String
   /// Status do colaborador na empresa (ativo, inativo).
   status    CollaboratorStatus @default(ACTIVE)
+  /// Data de admissão do colaborador.
+  hireDate  DateTime?
+  /// Nível atual de instrução do colaborador.
+  currentEducationLevel EducationLevel?
+  /// Anos de experiência atual do colaborador.
+  currentExperienceYears Float?
+  /// Data de criação do registro.
+  createdAt DateTime           @default(now())
+  /// Data da última atualização.
+  updatedAt DateTime           @updatedAt
 
   /// Check-ins de clima realizados por este colaborador.
   climateCheckIns ClimateCheckIn[]
@@ -113,6 +256,349 @@ model Collaborator {
   feedbacksReceived Feedback[]   @relation("Receiver")
   /// Cartões do Kanban atribuídos a este colaborador.
   assignedCards   KanbanCard[]
+  /// Avaliações de desempenho do colaborador.
+  performanceEvaluations PerformanceEvaluation[]
+  /// Relacionamentos hierárquicos onde é subordinado.
+  subordinateRelations OrganizationHierarchy[] @relation("Subordinate")
+  /// Relacionamentos hierárquicos onde é superior.
+  supervisorRelations  OrganizationHierarchy[] @relation("Supervisor")
+}
+
+/// Representa um cargo/posição na empresa.
+model JobPosition {
+  id        String   @id @default(cuid())
+  /// Nome/nomenclatura do cargo.
+  name      String
+  /// A qual empresa este cargo pertence.
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  /// Área/setor do cargo.
+  area      String
+  /// Cargo do superior imediato.
+  immediateSuperiorPosition String?
+  /// Tipo de carreira do cargo.
+  careerType CareerType
+  /// Objetivo principal do cargo.
+  mainObjective String @db.Text
+  /// Se tem algum adicional (insalubridade, periculosidade).
+  additionalBenefits String?
+  /// Se necessita disponibilidade para viagens.
+  requiresTravel Boolean @default(false)
+  /// Detalhes sobre viagens se necessário.
+  travelDetails String?
+  /// Se necessita veículo próprio.
+  requiresVehicle Boolean @default(false)
+  /// Tipo de veículo se necessário.
+  vehicleType String?
+  /// Se necessita carteira de habilitação.
+  requiresDriverLicense Boolean @default(false)
+  /// Tipo de habilitação se necessário.
+  driverLicenseType String?
+  /// Data de criação do cargo.
+  creationDate DateTime?
+  /// Data da última revisão do cargo.
+  lastRevisionDate DateTime?
+  /// Data de criação do registro.
+  createdAt DateTime @default(now())
+  /// Data da última atualização.
+  updatedAt DateTime @updatedAt
+
+  /// Colaboradores que ocupam este cargo.
+  collaborators Collaborator[]
+  /// Requisitos educacionais do cargo.
+  educationRequirements JobEducationRequirement[]
+  /// Requisitos de experiência do cargo.
+  experienceRequirements JobExperienceRequirement[]
+  /// Conhecimentos técnicos necessários.
+  knowledgeRequirements JobKnowledgeRequirement[]
+  /// Atividades do cargo.
+  activities JobActivity[]
+  /// Indicadores de performance do cargo.
+  indicators JobIndicator[]
+  /// Perfil comportamental esperado.
+  behavioralProfiles JobBehavioralProfile[]
+  /// Avaliações de desempenho baseadas neste cargo.
+  performanceEvaluations PerformanceEvaluation[]
+}
+
+/// Requisitos educacionais para um cargo.
+model JobEducationRequirement {
+  id           String          @id @default(cuid())
+  jobPositionId String
+  jobPosition  JobPosition     @relation(fields: [jobPositionId], references: [id], onDelete: Cascade)
+  /// Tipo do requisito (pré-requisito, desejável, pós-requisito).
+  requirementType RequirementType
+  /// Nível de instrução necessário.
+  educationLevel EducationLevel
+  /// Área específica da instrução, se aplicável.
+  specificArea String?
+  /// Data de criação do registro.
+  createdAt    DateTime        @default(now())
+}
+
+/// Requisitos de experiência para um cargo.
+model JobExperienceRequirement {
+  id           String          @id @default(cuid())
+  jobPositionId String
+  jobPosition  JobPosition     @relation(fields: [jobPositionId], references: [id], onDelete: Cascade)
+  /// Tipo do requisito (pré-requisito, desejável, pós-requisito).
+  requirementType RequirementType
+  /// Tempo mínimo necessário em anos.
+  minimumYears Float
+  /// Tipo de experiência necessária.
+  experienceType ExperienceType
+  /// Área específica da experiência, se aplicável.
+  specificArea String?
+  /// Descrição detalhada da experiência.
+  description String?
+  /// Data de criação do registro.
+  createdAt    DateTime        @default(now())
+}
+
+/// Conhecimentos técnicos necessários para um cargo.
+model JobKnowledgeRequirement {
+  id           String          @id @default(cuid())
+  jobPositionId String
+  jobPosition  JobPosition     @relation(fields: [jobPositionId], references: [id], onDelete: Cascade)
+  /// Tipo do requisito (pré-requisito, desejável, pós-requisito).
+  requirementType RequirementType
+  /// Nome do conhecimento técnico.
+  knowledgeName String
+  /// Nível de conhecimento necessário.
+  knowledgeLevel KnowledgeLevel
+  /// Descrição adicional do conhecimento.
+  description String?
+  /// Data de criação do registro.
+  createdAt    DateTime        @default(now())
+}
+
+/// Atividades de um cargo.
+model JobActivity {
+  id           String            @id @default(cuid())
+  jobPositionId String
+  jobPosition  JobPosition       @relation(fields: [jobPositionId], references: [id], onDelete: Cascade)
+  /// Descrição da atividade.
+  description  String
+  /// Se é uma atividade principal (máximo 5 por cargo).
+  isPrimary    Boolean           @default(false)
+  /// Periodicidade da atividade.
+  frequency    ActivityFrequency
+  /// Ordem de importância da atividade.
+  order        Int
+  /// Peso calculado da atividade dentro do seu grupo (primária/secundária).
+  weight       Float             @default(0)
+  /// Data de criação do registro.
+  createdAt    DateTime          @default(now())
+
+  /// Indicadores relacionados a esta atividade.
+  indicators JobIndicator[]
+  /// Avaliações desta atividade.
+  activityEvaluations ActivityEvaluation[]
+}
+
+/// Indicadores de performance de um cargo.
+model JobIndicator {
+  id           String      @id @default(cuid())
+  jobPositionId String
+  jobPosition  JobPosition @relation(fields: [jobPositionId], references: [id], onDelete: Cascade)
+  /// Atividade à qual este indicador se refere.
+  activityId   String?
+  activity     JobActivity? @relation(fields: [activityId], references: [id])
+  /// Nome do indicador.
+  name         String
+  /// Fonte de coleta de dados.
+  dataSource   String
+  /// Forma de cálculo do indicador.
+  calculationMethod String
+  /// Unidade de medida.
+  measurementUnit String
+  /// Meta esperada para o indicador.
+  target       String
+  /// Peso deste indicador na avaliação (padrão: 1.0 = 100%).
+  weight       Float       @default(1.0)
+  /// Data de criação do registro.
+  createdAt    DateTime    @default(now())
+
+  /// Avaliações deste indicador.
+  indicatorEvaluations IndicatorEvaluation[]
+}
+
+/// Perfil comportamental esperado para um cargo.
+model JobBehavioralProfile {
+  id           String            @id @default(cuid())
+  jobPositionId String
+  jobPosition  JobPosition       @relation(fields: [jobPositionId], references: [id], onDelete: Cascade)
+  /// Categoria do perfil comportamental.
+  category     BehavioralCategory
+  /// Descrição da habilidade/comportamento.
+  description  String
+  /// Peso desta habilidade na categoria (padrão: 1.0 = 100%).
+  weight       Float             @default(1.0)
+  /// Data de criação do registro.
+  createdAt    DateTime          @default(now())
+
+  /// Avaliações deste perfil comportamental.
+  profileEvaluations ProfileEvaluation[]
+}
+
+/// Hierarquia organizacional da empresa.
+model OrganizationHierarchy {
+  id           String       @id @default(cuid())
+  /// Colaborador subordinado.
+  subordinateId String
+  subordinate  Collaborator @relation("Subordinate", fields: [subordinateId], references: [id])
+  /// Colaborador supervisor.
+  supervisorId String
+  supervisor   Collaborator @relation("Supervisor", fields: [supervisorId], references: [id])
+  /// Data de início da relação hierárquica.
+  startDate    DateTime     @default(now())
+  /// Data de fim da relação hierárquica.
+  endDate      DateTime?
+  /// Se é a relação hierárquica ativa.
+  isActive     Boolean      @default(true)
+  /// Data de criação do registro.
+  createdAt    DateTime     @default(now())
+
+  @@unique([subordinateId, supervisorId, startDate])
+}
+
+/// Escala de pontuação padronizada para avaliações.
+model EvaluationScale {
+  id          String @id @default(cuid())
+  /// Percentual da escala (0, 40, 60, 80, 100).
+  percentage  Int
+  /// Descrição para eficiência/processo.
+  efficiencyDescription String
+  /// Descrição para eficácia/resultado.
+  effectivenessDescription String
+  /// Descrição para habilidades/comportamento.
+  skillDescription String
+  /// Data de criação do registro.
+  createdAt   DateTime @default(now())
+
+  @@unique([percentage])
+}
+
+/// Avaliação de desempenho de um colaborador.
+model PerformanceEvaluation {
+  id           String           @id @default(cuid())
+  /// Empresa à qual pertence a avaliação.
+  companyId    String
+  company      Company          @relation(fields: [companyId], references: [id])
+  /// Colaborador sendo avaliado.
+  collaboratorId String
+  collaborator Collaborator     @relation(fields: [collaboratorId], references: [id])
+  /// Cargo no momento da avaliação.
+  jobPositionId String
+  jobPosition  JobPosition      @relation(fields: [jobPositionId], references: [id])
+  /// Data de envio da avaliação.
+  submissionDate DateTime?
+  /// Data máxima para preenchimento.
+  dueDate      DateTime
+  /// Período de avaliação (início).
+  evaluationPeriodStart DateTime
+  /// Período de avaliação (fim).
+  evaluationPeriodEnd DateTime
+  /// Nível de instrução do avaliado no momento da avaliação.
+  currentEducationLevel EducationLevel?
+  /// Anos de experiência do avaliado.
+  experienceYears Float?
+  /// Pontuação calculada para instrução (baseada na diferença do mínimo).
+  educationScore Float?
+  /// Pontuação calculada para experiência (baseada na diferença do mínimo).
+  experienceScore Float?
+  /// Pontuação total das atividades.
+  activitiesScore Float?
+  /// Pontuação total dos indicadores.
+  indicatorsScore Float?
+  /// Pontuação total das habilidades.
+  skillsScore Float?
+  /// Pontuação final da avaliação.
+  finalScore   Float?
+  /// Status da avaliação.
+  status       EvaluationStatus @default(DRAFT)
+  /// Data de criação do registro.
+  createdAt    DateTime         @default(now())
+  /// Data da última atualização.
+  updatedAt    DateTime         @updatedAt
+
+  /// Avaliações das atividades.
+  activityEvaluations ActivityEvaluation[]
+  /// Avaliações dos indicadores.
+  indicatorEvaluations IndicatorEvaluation[]
+  /// Avaliações do perfil comportamental.
+  profileEvaluations ProfileEvaluation[]
+}
+
+/// Avaliação de uma atividade específica.
+model ActivityEvaluation {
+  id           String                @id @default(cuid())
+  /// Avaliação de desempenho à qual pertence.
+  evaluationId String
+  evaluation   PerformanceEvaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  /// Atividade sendo avaliada.
+  activityId   String
+  activity     JobActivity           @relation(fields: [activityId], references: [id])
+  /// Percentual de eficiência (0, 40, 60, 80, 100).
+  efficiencyPercentage Int
+  /// Percentual de eficácia (0, 40, 60, 80, 100).
+  effectivenessPercentage Int
+  /// Peso aplicado (70% para principais, 30% para demais).
+  weight       Float
+  /// Pontuação final calculada para esta atividade.
+  finalScore   Float
+  /// Comentários sobre a avaliação.
+  comments     String?
+  /// Data de criação do registro.
+  createdAt    DateTime              @default(now())
+}
+
+/// Avaliação de um indicador específico.
+model IndicatorEvaluation {
+  id           String                @id @default(cuid())
+  /// Avaliação de desempenho à qual pertence.
+  evaluationId String
+  evaluation   PerformanceEvaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  /// Indicador sendo avaliado.
+  indicatorId  String
+  indicator    JobIndicator          @relation(fields: [indicatorId], references: [id])
+  /// Meta estabelecida para o período.
+  target       String
+  /// Resultado alcançado.
+  result       String
+  /// Percentual de atingimento da meta.
+  achievementPercentage Float
+  /// Percentual convertido para escala de avaliação (0, 40, 60, 80, 100).
+  evaluationPercentage Int
+  /// Peso do indicador na avaliação.
+  weight       Float
+  /// Pontuação final calculada para este indicador.
+  finalScore   Float
+  /// Enquadramento (ex: "Superou", "Atingiu", "Não Atingiu").
+  classification String?
+  /// Data de criação do registro.
+  createdAt    DateTime              @default(now())
+}
+
+/// Avaliação do perfil comportamental.
+model ProfileEvaluation {
+  id           String                @id @default(cuid())
+  /// Avaliação de desempenho à qual pertence.
+  evaluationId String
+  evaluation   PerformanceEvaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  /// Perfil comportamental sendo avaliado.
+  profileId    String
+  profile      JobBehavioralProfile  @relation(fields: [profileId], references: [id])
+  /// Percentual atribuído ao perfil (0, 40, 60, 80, 100).
+  percentage   Int
+  /// Peso da habilidade na categoria.
+  weight       Float
+  /// Pontuação final calculada para esta habilidade.
+  finalScore   Float
+  /// Comentários sobre a avaliação.
+  comments     String?
+  /// Data de criação do registro.
+  createdAt    DateTime              @default(now())
 }
 
 /// Armazena o registro de um check-in de humor/clima feito por um colaborador.
@@ -144,6 +630,8 @@ model Feedback {
   type         FeedbackType
   /// Data em que o feedback foi enviado.
   createdAt    DateTime     @default(now())
+  /// Data da última atualização.
+  updatedAt    DateTime     @updatedAt
 }
 
 /// Representa um quadro Kanban, usado para organizar processos.
@@ -153,6 +641,11 @@ model KanbanBoard {
   name      String
   /// A qual empresa este quadro pertence.
   companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  /// Data de criação do registro.
+  createdAt DateTime @default(now())
+  /// Data da última atualização.
+  updatedAt DateTime @updatedAt
 
   /// Colunas que pertencem a este quadro.
   columns   KanbanColumn[]
@@ -168,6 +661,10 @@ model KanbanColumn {
   title   String
   /// Ordem da coluna dentro do quadro.
   order   Int
+  /// Data de criação do registro.
+  createdAt DateTime   @default(now())
+  /// Data da última atualização.
+  updatedAt DateTime   @updatedAt
 
   /// Cartões que pertencem a esta coluna.
   cards   KanbanCard[]
@@ -185,6 +682,10 @@ model KanbanCard {
   description String?
   /// Ordem do cartão dentro da coluna.
   order       Int
+  /// Data de criação do registro.
+  createdAt   DateTime     @default(now())
+  /// Data da última atualização.
+  updatedAt   DateTime     @updatedAt
 
   /// O colaborador a quem este cartão está atribuído (opcional).
   assignedToId String?

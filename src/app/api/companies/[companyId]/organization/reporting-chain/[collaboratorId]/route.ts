@@ -1,0 +1,1 @@
+// Placeholder para GET da cadeia de comando de um colaborador 

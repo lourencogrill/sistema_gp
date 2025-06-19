@@ -1,0 +1,33 @@
+{
+  "build": {
+    "env": {
+      "DATABASE_URL": "@database_url"
+    },
+    "command": "prisma migrate deploy && next build"
+  },
+  "framework": "nextjs",
+  "regions": ["gru1", "iad1"],
+  "functions": {
+    "app/api/**": {
+      "maxDuration": 30
+    }
+  },
+  "redirects": [
+    {
+      "source": "/admin",
+      "destination": "/dashboard",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=60, stale-while-revalidate=300"
+        }
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,1 @@
+// Placeholder para GET do fluxo de avaliações na hierarquia 

@@ -1,8 +1,15 @@
-export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold">Lume People</h1>
-      <p className="mt-4 text-lg text-muted-foreground">Em desenvolvimento...</p>
-    </main>
-  );
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+
+  if (session) {
+    redirect("/dashboard");
+  } else {
+    redirect("/login");
+  }
+
+  return null; // A página nunca será renderizada, pois o redirecionamento sempre ocorre.
 } 

@@ -1,0 +1,1 @@
+// Placeholder para GET de dados formatados para o organograma 

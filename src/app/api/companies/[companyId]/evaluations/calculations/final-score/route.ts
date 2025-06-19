@@ -1,0 +1,1 @@
+// Placeholder para cálculo da pontuação final 

@@ -1,0 +1,1 @@
+// Placeholder para preview de uma avaliação antes de submeter 

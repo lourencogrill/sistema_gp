@@ -1,0 +1,1 @@
+// Placeholder para recalcular pontuações de uma avaliação 
