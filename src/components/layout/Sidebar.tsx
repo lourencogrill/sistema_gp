@@ -5,7 +5,7 @@ import {
   Briefcase,
   ClipboardCheck,
   TrendingUp,
-  Sitemap,
+  Network,
   Settings,
   HelpCircle,
 } from 'lucide-react';
@@ -72,8 +72,8 @@ export const Sidebar = async () => {
         />
 
         <SidebarItem
-          icon={Sitemap}
-          label="Organograma"
+          icon={Network}
+          label="Organização"
           href="/organization"
           badge={data.orphanedEmployees > 0 ? data.orphanedEmployees : null}
           badgeVariant="warning"

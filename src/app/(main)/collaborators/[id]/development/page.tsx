@@ -1,6 +1,10 @@
 import React from 'react';
 
-const CollaboratorDevelopmentPage = ({ params }: { params: { id: string } }) => {
+type Props = {
+  params: { id: string };
+};
+
+const CollaboratorDevelopmentPage = ({ params }: Props) => {
   return (
     <div>
       <h1 className="text-2xl font-bold">Plano de Desenvolvimento</h1>
