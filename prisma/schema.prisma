@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Representa um tipo de feedback.
+enum FeedbackType {
+  POSITIVE
+  IMPROVEMENT
+  SUGGESTION
+}
+
+/// Representa a avaliação do clima.
+enum ClimateRating {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+/// Representa o status de um colaborador.
+enum CollaboratorStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Representa um usuário do sistema, geralmente gerenciado pelo NextAuth.
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  /// Papel do usuário no sistema (ex: ADMIN, USER).
+  role          String?
+
+  accounts      Account[]
+  sessions      Session[]
+  /// Colaborador associado a este usuário.
+  collaborator  Collaborator?
+  /// Assinaturas de notificações push para este usuário.
+  pushSubscriptions PushSubscription[]
+}
+
+/// Representa as contas de provedores de autenticação associadas a um usuário.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+/// Representa uma sessão de usuário ativa.
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Usado para o fluxo de verificação de e-mail.
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// Representa um funcionário dentro de uma empresa na plataforma.
+model Collaborator {
+  id        String   @id @default(cuid())
+  /// Vincula ao usuário autenticável do sistema.
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  /// A qual empresa este colaborador pertence.
+  companyId String
+  /// Nome completo do colaborador.
+  name      String
+  /// E-mail profissional do colaborador.
+  email     String   @unique
+  /// Cargo ou função do colaborador.
+  role      String
+  /// Departamento ou setor do colaborador.
+  department String
+  /// Status do colaborador na empresa (ativo, inativo).
+  status    CollaboratorStatus @default(ACTIVE)
+
+  /// Check-ins de clima realizados por este colaborador.
+  climateCheckIns ClimateCheckIn[]
+  /// Feedbacks enviados por este colaborador.
+  feedbacksGiven  Feedback[]     @relation("Giver")
+  /// Feedbacks recebidos por este colaborador.
+  feedbacksReceived Feedback[]   @relation("Receiver")
+  /// Cartões do Kanban atribuídos a este colaborador.
+  assignedCards   KanbanCard[]
+}
+
+/// Armazena o registro de um check-in de humor/clima feito por um colaborador.
+model ClimateCheckIn {
+  id             String        @id @default(cuid())
+  /// O colaborador que realizou o check-in.
+  collaboratorId String
+  collaborator   Collaborator  @relation(fields: [collaboratorId], references: [id])
+  /// Data em que o check-in foi realizado.
+  date           DateTime      @default(now())
+  /// A avaliação de clima registrada.
+  rating         ClimateRating
+  /// Comentário opcional sobre o check-in.
+  comment        String?
+}
+
+/// Representa um feedback enviado de um colaborador para outro.
+model Feedback {
+  id           String       @id @default(cuid())
+  /// O colaborador que enviou o feedback.
+  giverId      String
+  giver        Collaborator @relation("Giver", fields: [giverId], references: [id])
+  /// O colaborador que recebeu o feedback.
+  receiverId   String
+  receiver     Collaborator @relation("Receiver", fields: [receiverId], references: [id])
+  /// O conteúdo do feedback.
+  content      String
+  /// O tipo de feedback.
+  type         FeedbackType
+  /// Data em que o feedback foi enviado.
+  createdAt    DateTime     @default(now())
+}
+
+/// Representa um quadro Kanban, usado para organizar processos.
+model KanbanBoard {
+  id        String   @id @default(cuid())
+  /// Nome do quadro (ex: "Processo de Onboarding").
+  name      String
+  /// A qual empresa este quadro pertence.
+  companyId String
+
+  /// Colunas que pertencem a este quadro.
+  columns   KanbanColumn[]
+}
+
+/// Representa uma coluna dentro de um quadro Kanban.
+model KanbanColumn {
+  id      String       @id @default(cuid())
+  /// O quadro ao qual esta coluna pertence.
+  boardId String
+  board   KanbanBoard  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  /// Título da coluna (ex: "Para Fazer", "Em Andamento").
+  title   String
+  /// Ordem da coluna dentro do quadro.
+  order   Int
+
+  /// Cartões que pertencem a esta coluna.
+  cards   KanbanCard[]
+}
+
+/// Representa um cartão dentro de uma coluna de um quadro Kanban.
+model KanbanCard {
+  id          String   @id @default(cuid())
+  /// A coluna à qual este cartão pertence.
+  columnId    String
+  column      KanbanColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  /// Título do cartão.
+  title       String
+  /// Descrição detalhada do cartão (opcional).
+  description String?
+  /// Ordem do cartão dentro da coluna.
+  order       Int
+
+  /// O colaborador a quem este cartão está atribuído (opcional).
+  assignedToId String?
+  assignedTo   Collaborator? @relation(fields: [assignedToId], references: [id], onUpdate: NoAction, onDelete: SetNull)
+}
+
+/// Armazena as inscrições para notificações PWA de um usuário.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  /// Endpoint da assinatura, fornecido pelo navegador.
+  endpoint  String   @unique
+  /// Chave pública p256dh para criptografia.
+  p256dh    String
+  /// Segredo de autenticação.
+  auth      String
+  /// O usuário associado a esta assinatura.
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+} 
