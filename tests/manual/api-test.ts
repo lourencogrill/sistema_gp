@@ -13,7 +13,7 @@ async function testApi() {
     await prisma.$disconnect();
     process.exit(1);
   }
-//oi
+//oiiii
   const companyId = company.id;
   console.log(`Empresa encontrada. ID: ${companyId}`);
   
