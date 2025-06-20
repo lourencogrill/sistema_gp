@@ -59,10 +59,7 @@ export function LoginForm() {
     } catch (err: any) {
       console.error('Erro no login:', err);
       setErrorMessage('Ocorreu um erro ao fazer login. Tente novamente.');
-    } finally {
-      if (!router.asPath.includes(redirectTo)) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
   
