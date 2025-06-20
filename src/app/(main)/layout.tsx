@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 type Props = {
   children?: React.ReactNode;
@@ -19,6 +20,7 @@ export default async function MainLayout({ children }: Props) {
       <Sidebar />
       <main className="flex-1 pl-64">
         <div className="p-8">{children}</div>
+        <Toaster />
       </main>
     </div>
   );
