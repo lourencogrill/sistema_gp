@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -13,26 +13,36 @@ import {
   Settings,
   HelpCircle,
   ChevronLeft,
-  ChevronRight,
-  X,
-  Menu,
+  ChevronsLeft,
+  ChevronsRight,
+  type LucideIcon,
 } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { useNotifications } from '@/hooks/use-notifications';
+import { cn } from '@/lib/utils';
 
-interface SideMenuProps {
-  isMobileMenuOpen: boolean;
-  onMenuClose: () => void;
-  onMenuExpandChange: (isExpanded: boolean) => void;
+// --- ESTRUTURA DE DADOS ---
+interface MenuItem {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+  notificationKey?: keyof ReturnType<typeof useNotifications>;
 }
 
-const menuSections = [
+interface MenuSection {
+  title?: string;
+  items: MenuItem[];
+}
+
+const menuSections: MenuSection[] = [
   {
     items: [
       { icon: Home, label: 'Dashboard', href: '/dashboard' },
-      { icon: Users, label: 'Colaboradores', href: '/collaborators' },
+      { icon: Users, label: 'Colaboradores', href: '/collaborators', notificationKey: 'rhPendingCount' },
     ],
   },
   {
-    title: 'GESTÃO DE PESSOAS',
+    title: 'Gestão',
     items: [
       { icon: Briefcase, label: 'Cargos', href: '/job-positions' },
       { icon: ClipboardCheck, label: 'Avaliações', href: '/evaluations' },
@@ -40,13 +50,13 @@ const menuSections = [
     ],
   },
   {
-    title: 'ORGANIZAÇÃO',
+    title: 'Empresa',
     items: [
-      { icon: Network, label: 'Estrutura', href: '/organization' },
+      { icon: Network, label: 'Organização', href: '/organization' },
     ],
   },
   {
-    title: 'SISTEMA',
+    title: 'Sistema',
     items: [
       { icon: Settings, label: 'Configurações', href: '/settings' },
       { icon: HelpCircle, label: 'Ajuda', href: '/help' },
@@ -54,173 +64,218 @@ const menuSections = [
   },
 ];
 
-export const Sidebar = ({ isMobileMenuOpen, onMenuClose, onMenuExpandChange }: SideMenuProps) => {
-  const pathname = usePathname();
-  const [isExpanded, setIsExpanded] = useState(false);
+// --- PROPS DO COMPONENTE ---
+interface SidebarProps {
+  isMobileOpen: boolean;
+  onMobileClose: () => void;
+  isDesktopExpanded: boolean;
+  onDesktopExpandChange: (isExpanded: boolean) => void;
+}
+
+// --- COMPONENTE PRINCIPAL ---
+export function Sidebar({
+  isMobileOpen,
+  onMobileClose,
+  isDesktopExpanded,
+  onDesktopExpandChange,
+}: SidebarProps) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [isHovered, setIsHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const checkScreenSize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-    };
-    
-    checkScreenSize();
-    onMenuExpandChange(false);
-    
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, [onMenuExpandChange]);
-
-  const toggleExpanded = () => {
-    const newState = !isExpanded;
-    setIsExpanded(newState);
-    onMenuExpandChange(newState);
+  const isExpanded = useMemo(() => 
+    isMobile ? true : isDesktopExpanded || isHovered,
+    [isMobile, isDesktopExpanded, isHovered]
+  );
+  
+  const handleMouseEnter = () => {
+    if (!isMobile) setIsHovered(true);
+  };
+  
+  const handleMouseLeave = () => {
+    if (!isMobile) setIsHovered(false);
   };
 
-  const handleItemClick = () => {
-    if (isMobile) {
-      onMenuClose();
-    }
-  };
-
-  const shouldShowExpanded = isMobile ? isMobileMenuOpen : (isExpanded || isHovered);
-
+  const containerClasses = cn(
+    "fixed top-0 left-0 h-full bg-background border-r flex flex-col z-40 transition-all duration-300 ease-in-out",
+    isMobile 
+      ? isMobileOpen ? "translate-x-0 w-64 shadow-lg" : "-translate-x-full w-64"
+      : isExpanded ? "w-64" : "w-20"
+  );
+  
   return (
     <>
-      {/* Mobile overlay */}
-      {isMobileMenuOpen && isMobile && (
+      {isMobile && isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={onMenuClose}
+          className="fixed inset-0 bg-black/60 z-30" 
+          onClick={onMobileClose} 
         />
       )}
       
-      {/* Sidebar */}
       <aside 
-        className={`
-          fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 
-          transition-all duration-300 ease-in-out shadow-sm
-          ${isMobile 
-            ? isMobileMenuOpen 
-              ? 'w-64 translate-x-0' 
-              : 'w-64 -translate-x-full'
-            : shouldShowExpanded 
-              ? 'w-64' 
-              : 'w-16'
-          }
-        `}
-        onMouseEnter={() => !isMobile && setIsHovered(true)}
-        onMouseLeave={() => !isMobile && setIsHovered(false)}
+        className={containerClasses}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        {/* Header */}
-        <div className={`h-16 flex items-center border-b border-gray-100 bg-gray-50/50 ${
-          shouldShowExpanded ? 'justify-between px-4' : 'justify-center px-2'
-        }`}>
-          {shouldShowExpanded && (
-            <h2 className="font-bold text-gray-800 text-lg tracking-tight">
-              Lume People
-            </h2>
-          )}
-          
-          <div className="flex items-center space-x-1">
-            {isMobile && isMobileMenuOpen && (
-              <button
-                onClick={onMenuClose}
-                className="p-2 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors"
-              >
-                <X size={18} />
-              </button>
-            )}
-            
-            {!isMobile && (
-              <button
-                onClick={toggleExpanded}
-                className="p-2 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors"
-                title={isExpanded ? "Recolher menu" : "Expandir menu"}
-              >
-                {shouldShowExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-          {menuSections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="space-y-1">
-              {/* Section divider */}
-              {sectionIndex > 0 && (
-                <div className="py-3">
-                  <hr className="border-gray-200" />
-                </div>
-              )}
-              
-              {/* Section title */}
-              {section.title && shouldShowExpanded && (
-                <div className="px-3 py-2">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    {section.title}
-                  </h3>
-                </div>
-              )}
-              
-              {/* Section items */}
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const IconComponent = item.icon;
-                  const isActive = pathname === item.href;
-                  
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={handleItemClick}
-                      className={`
-                        flex items-center rounded-lg text-sm font-medium
-                        transition-all duration-200 group relative
-                        ${shouldShowExpanded ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'}
-                        ${isActive
-                          ? 'bg-blue-50 text-blue-700 shadow-sm border border-blue-100'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                        }
-                      `}
-                      title={!shouldShowExpanded ? item.label : undefined}
-                    >
-                      <IconComponent 
-                        className={`
-                          flex-shrink-0 w-5 h-5
-                          ${isActive ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'}
-                        `}
-                      />
-                      {shouldShowExpanded && (
-                        <span className="ml-3 truncate font-medium">
-                          {item.label}
-                        </span>
-                      )}
-                      
-                      {/* Indicador de item ativo */}
-                      {isActive && (
-                        <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-        
-        {/* Footer com informações do usuário (opcional) */}
-        {shouldShowExpanded && (
-          <div className="border-t border-gray-100 p-4">
-            <div className="text-xs text-gray-500 text-center">
-              Sistema Lume GP
-            </div>
-          </div>
-        )}
+        <SidebarHeader 
+          isExpanded={isExpanded}
+          isMobile={isMobile}
+          isDesktopExpanded={isDesktopExpanded}
+          onDesktopExpandChange={onDesktopExpandChange}
+        />
+        <SidebarNav isExpanded={isExpanded} isMobile={isMobile} />
+        <SidebarFooter isExpanded={isExpanded} />
       </aside>
     </>
   );
-}; 
+}
+
+
+// --- COMPONENTES FILHOS ---
+
+function SidebarHeader({ 
+  isExpanded, 
+  isMobile,
+  isDesktopExpanded, 
+  onDesktopExpandChange
+}: { 
+  isExpanded: boolean;
+  isMobile: boolean;
+  isDesktopExpanded: boolean,
+  onDesktopExpandChange: (isExpanded: boolean) => void;
+}) {
+  return (
+    <div className="flex h-16 items-center border-b px-4 shrink-0">
+      <div className={`flex items-center transition-all duration-300 ${isExpanded ? 'w-full justify-between' : 'w-full justify-center'}`}>
+        <span className={cn(
+          "font-bold text-lg whitespace-nowrap transition-opacity",
+          isExpanded ? "opacity-100" : "opacity-0"
+        )}>
+          Lume GP
+        </span>
+        {!isMobile && (
+          <button 
+            onClick={() => onDesktopExpandChange(!isDesktopExpanded)}
+            className="p-2 rounded-md hover:bg-muted text-muted-foreground"
+            title={isDesktopExpanded ? "Recolher" : "Expandir"}
+          >
+            {isDesktopExpanded ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SidebarNav({ isExpanded, isMobile }: { isExpanded: boolean, isMobile: boolean }) {
+  const pathname = usePathname();
+  const notifications = useNotifications();
+
+  return (
+    <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
+      <ul className="flex flex-col gap-1">
+        {menuSections.map((section, sectionIndex) => (
+          <li key={sectionIndex} className="space-y-1">
+            {section.title && (
+              <h3 className="relative text-xs font-semibold text-muted-foreground uppercase tracking-wider h-5 my-2 px-2">
+                <span className={cn(
+                  "absolute inset-0 flex items-center transition-opacity duration-300",
+                  isExpanded ? "justify-start opacity-100" : "justify-center opacity-0"
+                )}>
+                  <span className="truncate max-w-full">{section.title}</span>
+                </span>
+                {!isMobile && (
+                  <span className={cn(
+                    "absolute inset-0 flex items-center justify-center text-[10px] transition-opacity duration-300",
+                    !isExpanded ? 'opacity-100' : 'opacity-0'
+                  )}>
+                    {section.title.substring(0, 3)}
+                  </span>
+                )}
+              </h3>
+            )}
+            
+            <ul className="flex flex-col gap-1">
+              {section.items.map((item) => (
+                <SidebarNavItem
+                  key={item.href}
+                  item={item}
+                  isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === item.href)}
+                  isExpanded={isExpanded}
+                  notificationCount={item.notificationKey ? notifications[item.notificationKey] : 0}
+                />
+              ))}
+            </ul>
+
+            {sectionIndex < menuSections.length - 1 && <div className="pt-2" />}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+function SidebarNavItem({
+  item,
+  isActive,
+  isExpanded,
+  notificationCount = 0,
+}: {
+  item: MenuItem;
+  isActive: boolean;
+  isExpanded: boolean;
+  notificationCount?: number;
+}) {
+  const showNotification = notificationCount > 0;
+  
+  return (
+    <li>
+      <Link href={item.href} className={cn(
+        "group flex items-center rounded-md p-2 text-sm font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        isActive 
+          ? "bg-primary/10 text-primary"
+          : "text-foreground/70 hover:bg-muted hover:text-foreground",
+        isExpanded ? "justify-start" : "justify-center"
+      )}>
+        <item.icon className="h-[18px] w-[18px] shrink-0" />
+        <span className={cn(
+          "ml-3 whitespace-nowrap transition-all duration-300 transform",
+          isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4",
+        )}>
+          {item.label}
+        </span>
+        {showNotification && (
+           <span className={cn(
+            "flex items-center justify-center text-xs rounded-full h-5 min-w-[20px] px-1",
+            "bg-destructive text-destructive-foreground",
+            isExpanded ? 'ml-auto' : 'absolute -top-1 -right-1'
+          )}>
+            {notificationCount}
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+}
+
+function SidebarFooter({ isExpanded }: { isExpanded: boolean }) {
+    return (
+        <div className="mt-auto border-t p-4">
+             <div className={cn(
+                "flex items-center",
+                isExpanded ? "justify-start" : "justify-center"
+             )}>
+                <ChevronLeft size={18} className={cn(
+                    "text-muted-foreground transition-transform duration-500 ease-in-out",
+                    isExpanded ? "rotate-0" : "rotate-180"
+                )} />
+                <span className={cn(
+                    "ml-3 text-sm text-muted-foreground whitespace-nowrap transition-opacity",
+                    isExpanded ? "opacity-100" : "opacity-0"
+                )}>
+                    Recolher
+                </span>
+             </div>
+        </div>
+    );
+}
