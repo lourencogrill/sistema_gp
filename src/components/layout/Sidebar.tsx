@@ -32,7 +32,7 @@ const menuSections = [
     ],
   },
   {
-    title: 'Gestão de Pessoas',
+    title: 'GESTÃO DE PESSOAS',
     items: [
       { icon: Briefcase, label: 'Cargos', href: '/job-positions' },
       { icon: ClipboardCheck, label: 'Avaliações', href: '/evaluations' },
@@ -40,13 +40,13 @@ const menuSections = [
     ],
   },
   {
-    title: 'Organização',
+    title: 'ORGANIZAÇÃO',
     items: [
       { icon: Network, label: 'Estrutura', href: '/organization' },
     ],
   },
   {
-    title: 'Sistema',
+    title: 'SISTEMA',
     items: [
       { icon: Settings, label: 'Configurações', href: '/settings' },
       { icon: HelpCircle, label: 'Ajuda', href: '/help' },
@@ -97,11 +97,11 @@ export const Sidebar = ({ isMobileMenuOpen, onMenuClose, onMenuExpandChange }: S
         />
       )}
       
-      {/* Sidebar - VERTICAL NA ESQUERDA */}
+      {/* Sidebar */}
       <aside 
         className={`
           fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 
-          transition-all duration-300 ease-in-out
+          transition-all duration-300 ease-in-out shadow-sm
           ${isMobile 
             ? isMobileMenuOpen 
               ? 'w-64 translate-x-0' 
@@ -115,47 +115,52 @@ export const Sidebar = ({ isMobileMenuOpen, onMenuClose, onMenuExpandChange }: S
         onMouseLeave={() => !isMobile && setIsHovered(false)}
       >
         {/* Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+        <div className={`h-16 flex items-center border-b border-gray-100 bg-gray-50/50 ${
+          shouldShowExpanded ? 'justify-between px-4' : 'justify-center px-2'
+        }`}>
           {shouldShowExpanded && (
-            <h2 className="font-semibold text-gray-900 text-lg">
+            <h2 className="font-bold text-gray-800 text-lg tracking-tight">
               Lume People
             </h2>
           )}
           
-          {isMobile && isMobileMenuOpen && (
-            <button
-              onClick={onMenuClose}
-              className="p-2 hover:bg-gray-100 rounded-md text-gray-500"
-            >
-              <X size={20} />
-            </button>
-          )}
-          
-          {!isMobile && shouldShowExpanded && (
-            <button
-              onClick={toggleExpanded}
-              className="p-2 hover:bg-gray-100 rounded-md text-gray-500"
-            >
-              {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-            </button>
-          )}
+          <div className="flex items-center space-x-1">
+            {isMobile && isMobileMenuOpen && (
+              <button
+                onClick={onMenuClose}
+                className="p-2 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            )}
+            
+            {!isMobile && (
+              <button
+                onClick={toggleExpanded}
+                className="p-2 hover:bg-gray-200 rounded-lg text-gray-600 transition-colors"
+                title={isExpanded ? "Recolher menu" : "Expandir menu"}
+              >
+                {shouldShowExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-2 overflow-y-auto">
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {menuSections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="space-y-2">
+            <div key={sectionIndex} className="space-y-1">
               {/* Section divider */}
               {sectionIndex > 0 && (
-                <div className="pt-4">
+                <div className="py-3">
                   <hr className="border-gray-200" />
                 </div>
               )}
               
               {/* Section title */}
               {section.title && shouldShowExpanded && (
-                <div className="px-2 py-1">
-                  <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="px-3 py-2">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                     {section.title}
                   </h3>
                 </div>
@@ -173,10 +178,11 @@ export const Sidebar = ({ isMobileMenuOpen, onMenuClose, onMenuExpandChange }: S
                       href={item.href}
                       onClick={handleItemClick}
                       className={`
-                        flex items-center px-3 py-2 rounded-md text-sm font-medium
-                        transition-colors duration-200 group
+                        flex items-center rounded-lg text-sm font-medium
+                        transition-all duration-200 group relative
+                        ${shouldShowExpanded ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'}
                         ${isActive
-                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                          ? 'bg-blue-50 text-blue-700 shadow-sm border border-blue-100'
                           : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                         }
                       `}
@@ -185,12 +191,18 @@ export const Sidebar = ({ isMobileMenuOpen, onMenuClose, onMenuExpandChange }: S
                       <IconComponent 
                         className={`
                           flex-shrink-0 w-5 h-5
-                          ${!shouldShowExpanded ? 'mx-auto' : ''}
                           ${isActive ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'}
                         `}
                       />
                       {shouldShowExpanded && (
-                        <span className="ml-3 truncate">{item.label}</span>
+                        <span className="ml-3 truncate font-medium">
+                          {item.label}
+                        </span>
+                      )}
+                      
+                      {/* Indicador de item ativo */}
+                      {isActive && (
+                        <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-600 rounded-l"></div>
                       )}
                     </Link>
                   );
@@ -199,6 +211,15 @@ export const Sidebar = ({ isMobileMenuOpen, onMenuClose, onMenuExpandChange }: S
             </div>
           ))}
         </nav>
+        
+        {/* Footer com informações do usuário (opcional) */}
+        {shouldShowExpanded && (
+          <div className="border-t border-gray-100 p-4">
+            <div className="text-xs text-gray-500 text-center">
+              Sistema Lume GP
+            </div>
+          </div>
+        )}
       </aside>
     </>
   );
