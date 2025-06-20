@@ -18,20 +18,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           onMenuClose={() => setMobileMenuOpen(false)}
           onMenuExpandChange={setSidebarExpanded}
         />
-        <div className="flex flex-col flex-1">
+        <div
+          className={`flex flex-col flex-1 transition-all duration-300 ease-in-out ${
+            isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'
+          }`}
+        >
           {/* Header simples para o botão de menu mobile */}
-          <header className="md:hidden flex items-center justify-between p-4 border-b">
+          <header className="md:hidden flex items-center justify-between p-4 border-b bg-background">
             <h1 className="text-xl font-bold">Lume People</h1>
             <button onClick={() => setMobileMenuOpen(true)}>
               <Menu />
             </button>
           </header>
 
-          <main
-            className={`flex-1 p-6 transition-all duration-300 ease-in-out md:p-8 ${
-              isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'
-            }`}
-          >
+          <main className="flex-1 p-6 overflow-y-auto md:p-8">
             {children}
             <Toaster />
           </main>
