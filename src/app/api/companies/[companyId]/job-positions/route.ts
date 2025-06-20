@@ -12,6 +12,7 @@ import {
   ActivityFrequency,
   BehavioralCategory,
   CareerType,
+  PrismaClient,
 } from '@prisma/client';
 
 // Helper de autorização
@@ -25,37 +26,30 @@ async function checkUserCompany(session: any, companyId: string) {
 
 // Schemas de validação Zod detalhados
 const educationRequirementSchema = z.object({
-  // @ts-ignore
-  requirementType: z.nativeEnum(Prisma.RequirementType),
-  // @ts-ignore
-  educationLevel: z.nativeEnum(Prisma.EducationLevel),
+  requirementType: z.nativeEnum(RequirementType),
+  educationLevel: z.nativeEnum(EducationLevel),
   specificArea: z.string().optional(),
 });
 
 const experienceRequirementSchema = z.object({
-  // @ts-ignore
-  requirementType: z.nativeEnum(Prisma.RequirementType),
+  requirementType: z.nativeEnum(RequirementType),
   minimumYears: z.number().positive(),
-  // @ts-ignore
-  experienceType: z.nativeEnum(Prisma.ExperienceType),
+  experienceType: z.nativeEnum(ExperienceType),
   specificArea: z.string().optional(),
   description: z.string().optional(),
 });
 
 const knowledgeRequirementSchema = z.object({
-  // @ts-ignore
-  requirementType: z.nativeEnum(Prisma.RequirementType),
+  requirementType: z.nativeEnum(RequirementType),
   knowledgeName: z.string(),
-  // @ts-ignore
-  knowledgeLevel: z.nativeEnum(Prisma.KnowledgeLevel),
+  knowledgeLevel: z.nativeEnum(KnowledgeLevel),
   description: z.string().optional(),
 });
 
 const activitySchema = z.object({
   description: z.string(),
   isPrimary: z.boolean().default(false),
-  // @ts-ignore
-  frequency: z.nativeEnum(Prisma.ActivityFrequency),
+  frequency: z.nativeEnum(ActivityFrequency),
   order: z.number().int(),
 });
 
@@ -69,8 +63,7 @@ const indicatorSchema = z.object({
 });
 
 const behavioralProfileSchema = z.object({
-  // @ts-ignore
-  category: z.nativeEnum(Prisma.BehavioralCategory),
+  category: z.nativeEnum(BehavioralCategory),
   description: z.string(),
   weight: z.number().default(1.0),
 });
@@ -78,8 +71,7 @@ const behavioralProfileSchema = z.object({
 const jobPositionCreateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   area: z.string().min(1, 'Area is required'),
-  // @ts-ignore
-  careerType: z.nativeEnum(Prisma.CareerType),
+  careerType: z.nativeEnum(CareerType),
   mainObjective: z.string().min(1, 'Main objective is required'),
   educationRequirements: z.array(educationRequirementSchema).optional(),
   experienceRequirements: z.array(experienceRequirementSchema).optional(),
@@ -146,7 +138,7 @@ export async function POST(
       }
     }
 
-    const newJobPosition = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const newJobPosition = await prisma.$transaction(async (tx: PrismaClient) => {
       const createdJobPosition = await tx.jobPosition.create({
         data: {
           name,
