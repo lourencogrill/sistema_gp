@@ -99,11 +99,11 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token }: { token: JWT | null }) => {
-        // Se a variável de ambiente SKIP_AUTH for true, sempre autoriza.
-        if (process.env.SKIP_AUTH === 'true') {
+        // Pula a autenticação para todos os ambientes que não são de produção.
+        if (process.env.NODE_ENV !== 'production') {
           return true;
         }
-        // Caso contrário, exige um token (usuário logado).
+        // Em produção, exige um token (usuário logado).
         return !!token;
       },
     },
