@@ -4,7 +4,7 @@ import {
   type NextRequestWithAuth,
   type NextAuthMiddlewareOptions,
 } from 'next-auth/middleware';
-import { NextAuthToken } from 'next-auth/jwt';
+import { JWT } from 'next-auth/jwt';
 
 // Este é um placeholder. Em uma aplicação real, você buscaria a empresa no BD.
 const FAKE_COMPANY_DB = [
@@ -98,7 +98,7 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }: { token: NextAuthToken | null }) => {
+      authorized: ({ token }: { token: JWT | null }) => {
         // Se a variável de ambiente SKIP_AUTH for true, sempre autoriza.
         if (process.env.SKIP_AUTH === 'true') {
           return true;
