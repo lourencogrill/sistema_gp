@@ -1,27 +1,42 @@
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Toaster } from "@/components/ui/sonner";
+'use client';
 
-type Props = {
-  children?: React.ReactNode;
-};
+import { useState } from 'react';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Toaster } from '@/components/ui/sonner';
+import { Menu } from 'lucide-react';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
-export default async function MainLayout({ children }: Props) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/login");
-  }
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSidebarExpanded, setSidebarExpanded] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 pl-64">
-        <div className="p-8">{children}</div>
-        <Toaster />
-      </main>
-    </div>
+    <AuthProvider>
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar
+          isMobileMenuOpen={isMobileMenuOpen}
+          onMenuClose={() => setMobileMenuOpen(false)}
+          onMenuExpandChange={setSidebarExpanded}
+        />
+        <div className="flex flex-col flex-1">
+          {/* Header simples para o botão de menu mobile */}
+          <header className="md:hidden flex items-center justify-between p-4 border-b">
+            <h1 className="text-xl font-bold">Lume People</h1>
+            <button onClick={() => setMobileMenuOpen(true)}>
+              <Menu />
+            </button>
+          </header>
+
+          <main
+            className={`flex-1 p-6 transition-all duration-300 ease-in-out md:p-8 ${
+              isSidebarExpanded ? 'md:ml-64' : 'md:ml-20'
+            }`}
+          >
+            {children}
+            <Toaster />
+          </main>
+        </div>
+      </div>
+    </AuthProvider>
   );
 } 
