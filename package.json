@@ -19,6 +19,9 @@
     "deploy:staging": "vercel --env=staging",
     "deploy:production": "vercel --prod"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
