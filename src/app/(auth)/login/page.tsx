@@ -1,22 +1,13 @@
-'use client';
-
-import { signIn } from 'next-auth/react';
+import { Suspense } from 'react';
+import { LoginForm } from './components/LoginForm';
+import LoginLoading from './loading';
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-sm rounded-lg bg-white p-8 text-center shadow-md">
-        <h1 className="mb-2 text-2xl font-bold">Lume People</h1>
-        <p className="mb-6 text-gray-600">
-          Acesse a plataforma para gerenciar sua equipe.
-        </p>
-        <button
-          onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
-          className="w-full rounded-lg bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none focus:shadow-outline"
-        >
-          Entrar com Google
-        </button>
-      </div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+      <Suspense fallback={<LoginLoading />}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 } 

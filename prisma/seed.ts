@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { evaluationScales } from './data/evaluationScales';
 import { defaultEvaluationSettings } from './data/defaultSettings';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -40,6 +41,23 @@ async function main() {
     },
   });
   console.log(`Created/updated evaluation settings for ${testCompany.name}`);
+
+  // Criar um usuário administrador padrão
+  const adminEmail = 'admin@lumecapital.com.br';
+  const hashedPassword = await bcrypt.hash('Senha@123', 10);
+
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {},
+    create: {
+      email: adminEmail,
+      name: 'Admin Lume',
+      role: Role.ADMIN,
+      password: hashedPassword,
+    },
+  });
+
+  console.log(`Created or found admin user: ${adminUser.email}`);
 
   console.log(`Seeding finished.`);
 }
