@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Menu,
 } from 'lucide-react';
 
 interface SideMenuProps {
@@ -45,172 +46,144 @@ const menuSections = [
 
 export const Sidebar = ({ isMobileMenuOpen, onMenuClose, onMenuExpandChange }: SideMenuProps) => {
   const pathname = usePathname();
-  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
-  const [isMenuHovered, setIsMenuHovered] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsExpanded(false);
+        onMenuExpandChange(false);
+      }
     };
+    
     checkScreenSize();
-    onMenuExpandChange(false); // Informar que o menu começa recolhido
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, [onMenuExpandChange]);
 
-  const toggleMenuExpand = () => {
-    const newState = !isMenuExpanded;
-    setIsMenuExpanded(newState);
-    onMenuExpandChange(newState);
+  const toggleExpand = () => {
+    if (!isMobile) {
+      const newState = !isExpanded;
+      setIsExpanded(newState);
+      onMenuExpandChange(newState);
+    }
   };
 
-  const handleMenuItemClick = () => {
+  const handleItemClick = () => {
     if (isMobile) {
       onMenuClose();
     }
   };
 
-  const isExpanded = isMobile ? isMobileMenuOpen : isMenuExpanded || isMenuHovered;
+  // Para mobile, usa o estado do menu mobile; para desktop, usa o estado de expansão
+  const showExpanded = isMobile ? isMobileMenuOpen : isExpanded;
 
   return (
     <>
+      {/* Overlay para mobile */}
       {isMobileMenuOpen && isMobile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30" onClick={onMenuClose} />
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
+          onClick={onMenuClose}
+        />
       )}
+      
+      {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-background border-r border-border z-40 transition-all duration-300 ease-in-out ${
-          isMobile
-            ? isMobileMenuOpen
-              ? 'w-64 translate-x-0'
-              : 'w-64 -translate-x-full'
-            : isExpanded
-            ? 'w-64'
-            : 'w-20'
-        }`}
-        onMouseEnter={() => !isMobile && setIsMenuHovered(true)}
-        onMouseLeave={() => !isMobile && setIsMenuHovered(false)}
+        className={`
+          fixed top-0 left-0 h-full bg-white dark:bg-gray-900 
+          border-r border-gray-200 dark:border-gray-800 z-50
+          transition-all duration-300 ease-in-out
+          ${isMobile 
+            ? (isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full') + ' w-64'
+            : (isExpanded ? 'w-64' : 'w-16') + ' translate-x-0'
+          }
+        `}
       >
-        <div
-          className={`flex justify-between items-center h-16 border-b border-border transition-all duration-300 ${
-            isExpanded ? 'px-4' : 'px-6 justify-center'
-          }`}
-        >
-          <div className="overflow-hidden">
-            <h2
-              className={`font-semibold text-foreground text-base transition-all duration-300 transform ${
-                isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-              }`}
-            >
+        {/* Header */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
+          {showExpanded && (
+            <h2 className="font-semibold text-lg text-gray-900 dark:text-white">
               Lume People
             </h2>
-          </div>
-          <div className="flex items-center space-x-2">
+          )}
+          
+          <div className="flex items-center">
             {isMobile && isMobileMenuOpen && (
-              <button className="text-muted-foreground hover:text-foreground" onClick={onMenuClose}>
+              <button
+                onClick={onMenuClose}
+                className="p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+              >
                 <X size={20} />
               </button>
             )}
+            
             {!isMobile && (
               <button
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                onClick={toggleMenuExpand}
-                title={isMenuExpanded ? 'Recolher menu' : 'Expandir menu'}
+                onClick={toggleExpand}
+                className="p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+                title={isExpanded ? 'Recolher menu' : 'Expandir menu'}
               >
-                {isMenuExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+                {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
               </button>
             )}
           </div>
         </div>
 
-        <nav className="p-2">
-          <ul className="space-y-1">
-            {menuSections.map((section, sectionIndex) => (
-              <React.Fragment key={section.title || `section-${sectionIndex}`}>
-                {section.title && (
-                  <li className="pt-1.5 pb-0.5">
-                    <hr className="border-border/60" />
-                  </li>
-                )}
-                {section.title && (
-                  <li
-                    className={`pt-1.5 pb-0.5 overflow-hidden transition-all duration-300 ease-in-out ${
-                      isExpanded ? 'px-3' : 'px-6'
-                    }`}
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {menuSections.map((section, sectionIndex) => (
+            <div key={section.title || `section-${sectionIndex}`}>
+              {/* Section title */}
+              {section.title && showExpanded && (
+                <div className="px-3 py-2">
+                  <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {section.title}
+                  </h3>
+                </div>
+              )}
+              
+              {/* Section divider for collapsed state */}
+              {section.title && !showExpanded && (
+                <div className="px-3 py-2">
+                  <div className="h-px bg-gray-200 dark:bg-gray-800"></div>
+                </div>
+              )}
+
+              {/* Menu items */}
+              {section.items.map((item) => {
+                const IconComponent = item.icon;
+                const isActive = pathname === item.href;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={handleItemClick}
+                    className={`
+                      flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      ${isActive
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'
+                      }
+                    `}
+                    title={!showExpanded ? item.label : undefined}
                   >
-                    <h3
-                      className={`relative text-xs font-semibold text-muted-foreground uppercase tracking-wider h-5 ${
-                        isExpanded ? 'text-left' : 'text-center'
-                      }`}
-                    >
-                      <span
-                        className={`absolute inset-0 flex items-center transition-opacity duration-300 ease-in-out ${
-                          isExpanded
-                            ? 'justify-start opacity-100'
-                            : 'justify-center opacity-0 pointer-events-none'
-                        }`}
-                      >
-                        <span className="truncate max-w-full">{section.title}</span>
-                      </span>
-
-                      {!isMobile && (
-                        <span
-                          className={`absolute inset-0 flex items-center justify-center text-[10px] transition-opacity duration-300 ease-in-out ${
-                            !isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                          }`}
-                        >
-                          {section.title.substring(0, 3)}
-                        </span>
-                      )}
-                    </h3>
-                  </li>
-                )}
-                {section.items.map((item) => {
-                  const IconComponent = item.icon;
-                  const isActive = pathname === item.href;
-                  // TODO: Implementar notificações
-                  // const showNotification = item.href === '/collaborators' && notificationCount > 0;
-
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={`flex items-center justify-start py-1.5 rounded-md transition-all duration-300 relative group ${
-                          isExpanded ? 'px-3' : 'px-6'
-                        } ${
-                          isActive
-                            ? 'bg-primary/10 text-primary font-medium'
-                            : 'text-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                        title={!isExpanded ? item.label : ''}
-                        onClick={handleMenuItemClick}
-                      >
-                        <IconComponent
-                          size={18}
-                          className={`flex-shrink-0 ${
-                            isActive
-                              ? 'text-primary'
-                              : 'text-muted-foreground group-hover:text-foreground'
-                          }`}
-                        />
-                        <div className="overflow-hidden">
-                          <span
-                            className={`ml-3 whitespace-nowrap transition-all duration-300 transform block text-sm ${
-                              isExpanded
-                                ? 'opacity-100 translate-x-0'
-                                : 'opacity-0 -translate-x-4'
-                            } ${isActive ? 'font-medium' : 'font-normal'}`}
-                          >
-                            {item.label}
-                          </span>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </React.Fragment>
-            ))}
-          </ul>
+                    <IconComponent 
+                      size={20} 
+                      className={`flex-shrink-0 ${!showExpanded ? 'mx-auto' : ''}`} 
+                    />
+                    {showExpanded && (
+                      <span className="ml-3 truncate">{item.label}</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
       </aside>
     </>
