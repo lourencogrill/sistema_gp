@@ -21,7 +21,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { useNotifications } from '@/hooks/use-notifications';
 import { cn } from '@/lib/utils';
 
-// --- ESTRUTURA DE DADOS ---
+// --- DATA STRUCTURE ---
 interface MenuItem {
   icon: LucideIcon;
   label: string;
@@ -64,7 +64,7 @@ const menuSections: MenuSection[] = [
   },
 ];
 
-// --- PROPS DO COMPONENTE ---
+// --- COMPONENT PROPS ---
 interface SidebarProps {
   isMobileOpen: boolean;
   onMobileClose: () => void;
@@ -72,7 +72,7 @@ interface SidebarProps {
   onDesktopExpandChange: (isExpanded: boolean) => void;
 }
 
-// --- COMPONENTE PRINCIPAL ---
+// --- MAIN COMPONENT ---
 export function Sidebar({
   isMobileOpen,
   onMobileClose,
@@ -82,18 +82,14 @@ export function Sidebar({
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [isHovered, setIsHovered] = useState(false);
 
+  // This is the single source of truth for the expanded state.
   const isExpanded = useMemo(() => 
     isMobile ? true : isDesktopExpanded || isHovered,
     [isMobile, isDesktopExpanded, isHovered]
   );
   
-  const handleMouseEnter = () => {
-    if (!isMobile) setIsHovered(true);
-  };
-  
-  const handleMouseLeave = () => {
-    if (!isMobile) setIsHovered(false);
-  };
+  const handleMouseEnter = () => !isMobile && setIsHovered(true);
+  const handleMouseLeave = () => !isMobile && setIsHovered(false);
 
   const containerClasses = cn(
     "fixed top-0 left-0 h-full bg-background border-r flex flex-col z-40 transition-all duration-300 ease-in-out",
@@ -118,164 +114,152 @@ export function Sidebar({
       >
         <SidebarHeader 
           isExpanded={isExpanded}
-          isMobile={isMobile}
           isDesktopExpanded={isDesktopExpanded}
           onDesktopExpandChange={onDesktopExpandChange}
         />
-        <SidebarNav isExpanded={isExpanded} isMobile={isMobile} />
-        <SidebarFooter isExpanded={isExpanded} />
+        <SidebarNav isExpanded={isExpanded} />
+        <SidebarFooter isExpanded={isExpanded} isDesktopExpanded={isDesktopExpanded} />
       </aside>
     </>
   );
 }
 
-
-// --- COMPONENTES FILHOS ---
+// --- CHILD COMPONENTS ---
 
 function SidebarHeader({ 
   isExpanded, 
-  isMobile,
   isDesktopExpanded, 
   onDesktopExpandChange
 }: { 
   isExpanded: boolean;
-  isMobile: boolean;
-  isDesktopExpanded: boolean,
+  isDesktopExpanded: boolean;
   onDesktopExpandChange: (isExpanded: boolean) => void;
 }) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   return (
-    <div className="flex h-16 items-center border-b px-4 shrink-0">
-      <div className={`flex items-center transition-all duration-300 ${isExpanded ? 'w-full justify-between' : 'w-full justify-center'}`}>
-        <span className={cn(
-          "font-bold text-lg whitespace-nowrap transition-opacity",
-          isExpanded ? "opacity-100" : "opacity-0"
-        )}>
-          Lume GP
-        </span>
-        {!isMobile && (
-          <button 
-            onClick={() => onDesktopExpandChange(!isDesktopExpanded)}
-            className="p-2 rounded-md hover:bg-muted text-muted-foreground"
-            title={isDesktopExpanded ? "Recolher" : "Expandir"}
-          >
-            {isDesktopExpanded ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />}
-          </button>
-        )}
-      </div>
+    <div className={cn(
+      "flex h-16 items-center border-b shrink-0",
+      isExpanded ? "justify-between px-4" : "justify-center"
+    )}>
+      <span className={cn(
+        "font-bold text-lg whitespace-nowrap transition-opacity duration-300",
+        isExpanded ? "opacity-100" : "opacity-0"
+      )}>
+        Lume GP
+      </span>
+      {!isMobile && (
+        <button 
+          onClick={() => onDesktopExpandChange(!isDesktopExpanded)}
+          className="p-2 rounded-md hover:bg-muted text-muted-foreground"
+          title={isDesktopExpanded ? "Recolher" : "Expandir"}
+        >
+          {isDesktopExpanded ? <ChevronsLeft size={18} /> : <ChevronsRight size={18} />}
+        </button>
+      )}
     </div>
   );
 }
 
-function SidebarNav({ isExpanded, isMobile }: { isExpanded: boolean, isMobile: boolean }) {
+function SidebarNav({ isExpanded }: { isExpanded: boolean }) {
   const pathname = usePathname();
   const notifications = useNotifications();
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   return (
     <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
-      <ul className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1">
         {menuSections.map((section, sectionIndex) => (
-          <li key={sectionIndex} className="space-y-1">
+          <div key={sectionIndex}>
             {section.title && (
-              <h3 className="relative text-xs font-semibold text-muted-foreground uppercase tracking-wider h-5 my-2 px-2">
-                <span className={cn(
-                  "absolute inset-0 flex items-center transition-opacity duration-300",
-                  isExpanded ? "justify-start opacity-100" : "justify-center opacity-0"
-                )}>
-                  <span className="truncate max-w-full">{section.title}</span>
-                </span>
-                {!isMobile && (
-                  <span className={cn(
-                    "absolute inset-0 flex items-center justify-center text-[10px] transition-opacity duration-300",
-                    !isExpanded ? 'opacity-100' : 'opacity-0'
-                  )}>
-                    {section.title.substring(0, 3)}
-                  </span>
-                )}
-              </h3>
+              <div className="px-2 my-2 h-5 flex items-center justify-center">
+                 <h3 className={cn(
+                  "text-xs font-semibold text-muted-foreground uppercase tracking-wider transition-opacity duration-300",
+                  !isExpanded && !isMobile ? "opacity-100" : "opacity-0 w-0"
+                 )}>
+                   {section.title.substring(0, 3)}
+                 </h3>
+                 <h3 className={cn(
+                  "text-xs font-semibold text-muted-foreground uppercase tracking-wider transition-opacity duration-300",
+                  isExpanded ? "opacity-100" : "opacity-0 w-0"
+                 )}>
+                   {section.title}
+                 </h3>
+              </div>
             )}
             
-            <ul className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1">
               {section.items.map((item) => (
                 <SidebarNavItem
                   key={item.href}
                   item={item}
-                  isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === item.href)}
+                  isActive={pathname.startsWith(item.href)}
                   isExpanded={isExpanded}
                   notificationCount={item.notificationKey ? notifications[item.notificationKey] : 0}
                 />
               ))}
-            </ul>
+            </div>
 
-            {sectionIndex < menuSections.length - 1 && <div className="pt-2" />}
-          </li>
+            {sectionIndex < menuSections.length - 1 && <div className="h-4" />}
+          </div>
         ))}
-      </ul>
+      </div>
     </nav>
   );
 }
 
-function SidebarNavItem({
-  item,
-  isActive,
-  isExpanded,
-  notificationCount = 0,
-}: {
+function SidebarNavItem({ item, isActive, isExpanded, notificationCount = 0 }: {
   item: MenuItem;
   isActive: boolean;
   isExpanded: boolean;
   notificationCount?: number;
 }) {
-  const showNotification = notificationCount > 0;
-  
   return (
-    <li>
-      <Link href={item.href} className={cn(
-        "group flex items-center rounded-md p-2 text-sm font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        isActive 
-          ? "bg-primary/10 text-primary"
-          : "text-foreground/70 hover:bg-muted hover:text-foreground",
-        isExpanded ? "justify-start" : "justify-center"
+    <Link href={item.href} className={cn(
+      "group relative flex items-center rounded-md p-2 text-sm font-medium transition-colors",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      isActive 
+        ? "bg-primary/10 text-primary"
+        : "text-foreground/70 hover:bg-muted hover:text-foreground",
+      isExpanded ? "justify-start" : "justify-center"
+    )}>
+      <item.icon className="h-[18px] w-[18px] shrink-0" />
+      <span className={cn(
+        "ml-3 whitespace-nowrap transition-opacity duration-200",
+        isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
       )}>
-        <item.icon className="h-[18px] w-[18px] shrink-0" />
-        <span className={cn(
-          "ml-3 whitespace-nowrap transition-all duration-300 transform",
-          isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4",
+        {item.label}
+      </span>
+      {notificationCount > 0 && (
+         <span className={cn(
+          "flex items-center justify-center text-xs rounded-full h-5 min-w-[20px] px-1 font-bold",
+          "bg-destructive text-destructive-foreground",
+          isExpanded ? 'ml-auto' : 'absolute top-0 right-0'
         )}>
-          {item.label}
+          {notificationCount}
         </span>
-        {showNotification && (
-           <span className={cn(
-            "flex items-center justify-center text-xs rounded-full h-5 min-w-[20px] px-1",
-            "bg-destructive text-destructive-foreground",
-            isExpanded ? 'ml-auto' : 'absolute -top-1 -right-1'
-          )}>
-            {notificationCount}
-          </span>
-        )}
-      </Link>
-    </li>
+      )}
+    </Link>
   );
 }
 
-function SidebarFooter({ isExpanded }: { isExpanded: boolean }) {
-    return (
-        <div className="mt-auto border-t p-4">
-             <div className={cn(
-                "flex items-center",
-                isExpanded ? "justify-start" : "justify-center"
-             )}>
-                <ChevronLeft size={18} className={cn(
-                    "text-muted-foreground transition-transform duration-500 ease-in-out",
-                    isExpanded ? "rotate-0" : "rotate-180"
-                )} />
-                <span className={cn(
-                    "ml-3 text-sm text-muted-foreground whitespace-nowrap transition-opacity",
-                    isExpanded ? "opacity-100" : "opacity-0"
-                )}>
-                    Recolher
-                </span>
-             </div>
-        </div>
-    );
+function SidebarFooter({ isExpanded, isDesktopExpanded }: { isExpanded: boolean, isDesktopExpanded: boolean }) {
+  return (
+    <div className="mt-auto border-t">
+      <div className={cn(
+        "flex items-center p-4",
+        isExpanded ? "justify-start" : "justify-center"
+      )}>
+        <ChevronLeft size={18} className={cn(
+          "text-muted-foreground transition-transform duration-500 ease-in-out",
+          isDesktopExpanded ? "rotate-0" : "rotate-180"
+        )} />
+        <span className={cn(
+          "ml-3 text-sm text-muted-foreground whitespace-nowrap transition-opacity",
+          isExpanded ? "opacity-100" : "opacity-0"
+        )}>
+          Recolher
+        </span>
+      </div>
+    </div>
+  );
 }
