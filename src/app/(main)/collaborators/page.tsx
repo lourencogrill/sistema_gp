@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -10,16 +9,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { CollaboratorActions } from '@/components/people/CollaboratorActions';
 
-type CollaboratorWithJobPosition = Prisma.CollaboratorGetPayload<{
-  include: { jobPosition: true };
-}>;
-
-const CollaboratorsPage = async () => {
-  const collaborators = await prisma.collaborator.findMany({
+// Função para buscar os dados
+async function getCollaborators() {
+  return prisma.collaborator.findMany({
     include: {
       jobPosition: true,
     },
@@ -27,28 +22,33 @@ const CollaboratorsPage = async () => {
       name: 'asc',
     }
   });
+}
+
+export default async function CollaboratorsPage() {
+  const collaborators = await getCollaborators();
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Colaboradores</CardTitle>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Colaboradores</h1>
         <Link href="/collaborators/new">
           <Button>Adicionar Colaborador</Button>
         </Link>
-      </CardHeader>
-      <CardContent>
-        <Table>
+      </div>
+
+      <div className="bg-background border shadow-sm rounded-lg">
+         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Cargo</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
+              <TableHead className="text-right w-[100px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {collaborators.map((collaborator: CollaboratorWithJobPosition) => (
+            {collaborators.map((collaborator: any) => (
               <TableRow key={collaborator.id}>
                 <TableCell className="font-medium">{collaborator.name}</TableCell>
                 <TableCell>{collaborator.email}</TableCell>
@@ -65,9 +65,7 @@ const CollaboratorsPage = async () => {
             ))}
           </TableBody>
         </Table>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
-};
-
-export default CollaboratorsPage; 
+}; 

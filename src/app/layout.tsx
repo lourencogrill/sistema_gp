@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Nunito_Sans } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/components/auth/AuthProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+const nunito_sans = Nunito_Sans({ 
+  subsets: ["latin"],
+  weight: ['400', '600', '700'] 
+});
 
 export const metadata: Metadata = {
   title: "Lume People",
@@ -17,8 +19,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+      <body className={nunito_sans.className}>
+        {children}
       </body>
     </html>
   );
