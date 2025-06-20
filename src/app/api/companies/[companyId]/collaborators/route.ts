@@ -44,6 +44,7 @@ export async function GET(
 const createCollaboratorSchema = z.object({
   name: z.string().min(3, 'O nome é obrigatório e precisa de no mínimo 3 caracteres.'),
   email: z.string().email('O email fornecido é inválido.'),
+  department: z.string().min(2, 'O departamento é obrigatório.'),
   jobPositionId: z.string().cuid('O ID do cargo é inválido.'),
   hireDate: z.string().optional().transform((val) => val ? new Date(val) : null),
 });
@@ -60,7 +61,7 @@ export async function POST(
       return NextResponse.json(validation.error.format(), { status: 400 });
     }
 
-    const { name, email, jobPositionId, hireDate } = validation.data;
+    const { name, email, department, jobPositionId, hireDate } = validation.data;
     const { companyId } = params;
 
     // TODO: Adicionar lógica para garantir que a empresa existe
@@ -84,6 +85,7 @@ export async function POST(
       data: {
         name,
         email,
+        department,
         hireDate,
         company: {
           connect: { id: companyId },

@@ -24,6 +24,7 @@ const CollaboratorForm = ({ jobPositions }: CollaboratorFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    department: '',
     jobPositionId: '',
     hireDate: '',
   });
@@ -94,6 +95,16 @@ const CollaboratorForm = ({ jobPositions }: CollaboratorFormProps) => {
               type="email" 
               placeholder="email@empresa.com" 
               value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="department">Departamento</Label>
+            <Input 
+              id="department" 
+              placeholder="Ex: Financeiro, Tecnologia" 
+              value={formData.department}
               onChange={handleChange}
               required
             />
