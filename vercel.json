@@ -1,6 +1,5 @@
 {
   "framework": "nextjs",
-  "regions": ["gru1", "iad1"],
   "functions": {
     "app/api/**": {
       "maxDuration": 30
