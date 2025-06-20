@@ -122,7 +122,7 @@ export async function POST(
 
   try {
     const body = await req.json();
-    const parsedData = jobPositionCreateSchema.parse(body);
+    const parsedData: z.infer<typeof jobPositionCreateSchema> = jobPositionCreateSchema.parse(body);
     const {
       educationRequirements,
       experienceRequirements,
@@ -130,7 +130,10 @@ export async function POST(
       activities,
       indicators,
       behavioralProfiles,
-      ...jobPositionData
+      name,
+      area,
+      careerType,
+      mainObjective,
     } = parsedData;
 
     if (activities && Array.isArray(activities)) {
@@ -146,7 +149,10 @@ export async function POST(
     const newJobPosition = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const createdJobPosition = await tx.jobPosition.create({
         data: {
-          ...jobPositionData,
+          name,
+          area,
+          careerType,
+          mainObjective,
           companyId: params.companyId,
         },
       });
