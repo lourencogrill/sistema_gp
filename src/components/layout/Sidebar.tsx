@@ -97,14 +97,18 @@ export const Sidebar = ({ isMobileMenuOpen, onMenuClose, onMenuExpandChange }: S
         />
       )}
       
-      {/* Sidebar */}
+      {/* Sidebar - VERTICAL NA ESQUERDA */}
       <aside 
         className={`
           fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-50 
           transition-all duration-300 ease-in-out
           ${isMobile 
-            ? isMobileMenuOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full'
-            : shouldShowExpanded ? 'w-64' : 'w-16'
+            ? isMobileMenuOpen 
+              ? 'w-64 translate-x-0' 
+              : 'w-64 -translate-x-full'
+            : shouldShowExpanded 
+              ? 'w-64' 
+              : 'w-16'
           }
         `}
         onMouseEnter={() => !isMobile && setIsHovered(true)}
