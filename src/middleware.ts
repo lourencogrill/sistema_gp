@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  withAuth,
+  type NextRequestWithAuth,
+  type NextAuthMiddlewareOptions,
+} from 'next-auth/middleware';
+import { NextAuthToken } from 'next-auth/jwt';
 
 // Este é um placeholder. Em uma aplicação real, você buscaria a empresa no BD.
 const FAKE_COMPANY_DB = [
@@ -24,7 +30,7 @@ function extractCompanySlug(pathname: string): string | null {
   return null;
 }
 
-export async function middleware(request: NextRequest) {
+async function tenancyMiddleware(request: NextRequestWithAuth) {
   const { pathname } = request.nextUrl;
 
   // Ignorar rotas que não precisam de tenancy (ex: /login, /api/auth)
@@ -75,6 +81,37 @@ export async function middleware(request: NextRequest) {
     },
   });
 }
+
+export default withAuth(
+  // `withAuth` estende o `req` com o token do usuário.
+  async function middleware(request: NextRequestWithAuth) {
+    // Roda o middleware de tenancy primeiro
+    const tenancyResponse = await tenancyMiddleware(request);
+
+    // Se o middleware de tenancy retornou uma resposta (reescrita ou outra),
+    // devemos usá-la. Caso contrário, continuamos.
+    if (tenancyResponse) {
+      return tenancyResponse;
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }: { token: NextAuthToken | null }) => {
+        // Se a variável de ambiente SKIP_AUTH for true, sempre autoriza.
+        if (process.env.SKIP_AUTH === 'true') {
+          return true;
+        }
+        // Caso contrário, exige um token (usuário logado).
+        return !!token;
+      },
+    },
+    pages: {
+      signIn: '/login', // Redireciona para a página de login se não autorizado
+    },
+  } as NextAuthMiddlewareOptions
+);
 
 // Configuração para especificar em quais rotas o middleware deve rodar.
 export const config = {
