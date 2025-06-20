@@ -82,13 +82,7 @@ export async function PUT(
 
     const updatedSettings = await prisma.evaluationSettings.update({
       where: { companyId: params.companyId },
-      data: {
-        name,
-        area,
-        careerType,
-        mainObjective,
-        companyId: params.companyId,
-      },
+      data: validatedData,
     });
 
     return NextResponse.json(updatedSettings);
