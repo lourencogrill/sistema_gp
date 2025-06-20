@@ -99,8 +99,8 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token }: { token: JWT | null }) => {
-        // Pula a autenticação para todos os ambientes que não são de produção.
-        if (process.env.NODE_ENV !== 'production') {
+        // Pula a autenticação para todos os ambientes que não são de produção (ex: preview, development).
+        if (process.env.VERCEL_ENV !== 'production') {
           return true;
         }
         // Em produção, exige um token (usuário logado).
