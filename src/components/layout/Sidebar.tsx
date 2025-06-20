@@ -36,10 +36,10 @@ export const Sidebar = async () => {
       </div>
 
       <nav className="px-4 space-y-2 flex-grow">
-        <SidebarItem icon={Home} label="Dashboard" href="/dashboard" />
+        <SidebarItem icon="Home" label="Dashboard" href="/dashboard" />
 
         <SidebarItem
-          icon={Users}
+          icon="Users"
           label="Colaboradores"
           href="/collaborators"
           badge={data.inactiveCollaborators > 0 ? data.inactiveCollaborators : null}
@@ -47,7 +47,7 @@ export const Sidebar = async () => {
         />
 
         <SidebarItem
-          icon={Briefcase}
+          icon="Briefcase"
           label="Cargos"
           href="/job-positions"
           badge={data.jobPositionsWithoutDescription > 0 ? data.jobPositionsWithoutDescription : null}
@@ -55,7 +55,7 @@ export const Sidebar = async () => {
         />
 
         <SidebarItem
-          icon={ClipboardCheck}
+          icon="ClipboardCheck"
           label="Avaliações"
           href="/evaluations"
           badge={data.pendingEvaluations > 0 ? data.pendingEvaluations : null}
@@ -64,7 +64,7 @@ export const Sidebar = async () => {
         />
 
         <SidebarItem
-          icon={TrendingUp}
+          icon="TrendingUp"
           label="Analytics"
           href="/analytics"
           badge={data.criticalInsights > 0 ? '!' : null}
@@ -72,7 +72,7 @@ export const Sidebar = async () => {
         />
 
         <SidebarItem
-          icon={Network}
+          icon="Network"
           label="Organização"
           href="/organization"
           badge={data.orphanedEmployees > 0 ? data.orphanedEmployees : null}
@@ -81,8 +81,8 @@ export const Sidebar = async () => {
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        <SidebarItem icon={Settings} label="Configurações" href="/settings" />
-        <SidebarItem icon={HelpCircle} label="Ajuda" href="/help" />
+        <SidebarItem icon="Settings" label="Configurações" href="/settings" />
+        <SidebarItem icon="HelpCircle" label="Ajuda" href="/help" />
       </div>
     </aside>
   );

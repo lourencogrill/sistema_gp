@@ -2,7 +2,28 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LucideIcon } from 'lucide-react';
+import {
+  Home,
+  Users,
+  Briefcase,
+  ClipboardCheck,
+  TrendingUp,
+  Network,
+  Settings,
+  HelpCircle,
+  type LucideIcon,
+} from 'lucide-react';
+
+const icons = {
+  Home,
+  Users,
+  Briefcase,
+  ClipboardCheck,
+  TrendingUp,
+  Network,
+  Settings,
+  HelpCircle,
+};
 
 // Idealmente, viria de um arquivo de UI centralizado (shadcn/ui)
 const badgeVariants = {
@@ -14,7 +35,7 @@ const badgeVariants = {
 };
 
 interface SidebarItemProps {
-  icon: LucideIcon;
+  icon: keyof typeof icons;
   label: string;
   href: string;
   active?: boolean; // Pode ser passado explicitamente
@@ -24,7 +45,7 @@ interface SidebarItemProps {
 }
 
 export const SidebarItem = ({
-  icon: Icon,
+  icon,
   label,
   href,
   active,
@@ -34,6 +55,7 @@ export const SidebarItem = ({
 }: SidebarItemProps) => {
   const pathname = usePathname();
   const isActive = active ?? pathname === href;
+  const Icon = icons[icon] as LucideIcon;
 
   return (
     <Link
