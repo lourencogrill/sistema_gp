@@ -12,7 +12,6 @@ import {
   ActivityFrequency,
   BehavioralCategory,
   CareerType,
-  PrismaClient,
 } from '@prisma/client';
 
 // Helper de autorização
@@ -138,7 +137,7 @@ export async function POST(
       }
     }
 
-    const newJobPosition = await prisma.$transaction(async (tx: PrismaClient) => {
+    const newJobPosition = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const createdJobPosition = await tx.jobPosition.create({
         data: {
           name,
